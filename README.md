@@ -161,6 +161,17 @@ You can provide photo data in two ways:
 
 ---
 
+## 🛠️ Troubleshooting
+-   **Card not showing / `Custom element doesn't exist`:**
+    -   Ensure the resource is correctly added in Lovelace resources (`/local/photo-carousel-card/photo-carousel-card.js` with type `JavaScript Module`).
+    -   Clear your browser cache.
+    -   Restart Home Assistant after installation.
+-   **No photos appearing:**
+    -   When using JSON file, Check your `description_file_path` for correctness. Ensure the files actually exist in `config/www/` (which maps to `/local/`).
+    -   Verify the content of your `.txt` or `.json` file matches the expected format.
+    -   Check `max_items_to_show` and `max_days_to_show` filters - they might be too restrictive.
+    -   Open your browser's developer console (F12) and look for errors related to fetching files or JavaScript.
+
 ## 🙌 Contributing
 PRs, issues, and suggestions welcome! Before submitting a PR, ensure you run the `build` command to compile the card for deployment.
 
@@ -173,4 +184,4 @@ PRs, issues, and suggestions welcome! Before submitting a PR, ensure you run the
 ---
 
 ## 📃 License
-MIT License © [Hammad Bin Arif](https://github.com/hammadbinarif)
+MIT License © [Hammad Arif](https://github.com/hammadbinarif)
