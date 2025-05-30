@@ -18,4 +18,4 @@ jobs:
       - name: HACS validation
         uses: hacs/action@main # Use the latest stable version
         with:
-          category: plugin 
+          category: plugin

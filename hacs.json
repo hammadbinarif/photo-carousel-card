@@ -1,7 +1,13 @@
 {
   "name": "Photo Carousel Card",
+  "content_in_root": false,
+  "filename": "dist/photo-carousel-card.js",
   "render_readme": true,
-  "content_in_root": true,
-  "filename": "photo-carousel-card.js",
-  "category": "frontend"
+  "description": "A sleek and configurable Lovelace carousel card for viewing photo snapshots with autoplay, filters, and smooth swipe/arrow navigation.",
+  "homeassistant": "2023.3.0",
+  "type": "lovelace",
+  "domains": ["lovelace"],
+  "country": "ALL",
+  "authors": ["hammadbinarif"],
+  "zip_release": false
 }
