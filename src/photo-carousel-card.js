@@ -1,6 +1,32 @@
 import { LitElement, html, css } from 'lit';
 
-console.log("PhotoCarouselCard component file loaded with custom carousel implementation.");
+function processPhotoTimestamp(photo) {
+    let timestamp;
+
+    if (photo.time_stamp) {
+        let tsString = String(photo.time_stamp);
+
+        // Regex to detect ISO 8601 like YYYY-MM-DDTHH:MM:SS (or .sss) WITHOUT a timezone indicator (Z, +HH:MM, -HH:MM).
+        // If it matches, append 'Z' to treat it as UTC, preventing potential local time interpretation issues.
+        if (tsString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/)) {
+            tsString += 'Z';
+        }
+
+        timestamp = new Date(tsString);
+
+        // If Date parsing results in an 'Invalid Date', default to current time
+        if (isNaN(timestamp.getTime())) {
+            console.warn(`Photo Carousel Card: Invalid timestamp format for photo "${photo.img || photo.desc || 'unknown'}". Received "${photo.time_stamp}". Defaulting to current time.`);
+            timestamp = new Date(); // Default to current time if parsing fails
+        }
+    } else {
+        // If time_stamp is not provided, default to the current time (now)
+        timestamp = new Date();
+    }
+
+    // Return the photo object with the processed timestamp
+    return { ...photo, timestamp: timestamp };
+}
 
 class PhotoCarouselCard extends LitElement {
     static properties = {
@@ -19,7 +45,6 @@ class PhotoCarouselCard extends LitElement {
         _startX: { type: Number },
         _endX: { type: Number },
         _swipeThreshold: { type: Number },
-        // NEW: Properties for mouse dragging
         _isDragging: { type: Boolean },
         _originalTrackTransition: { type: String },
     };
@@ -32,7 +57,7 @@ class PhotoCarouselCard extends LitElement {
         this._reloadInterval = null;
         this._processedPhotos = [];
         this.max_items_to_show = 30;
-        this.max_days_to_show = 30;
+        this.max_days_to_show = 0;
         this.title_style = {
             show_title: true,
             font_color: null,
@@ -199,24 +224,23 @@ class PhotoCarouselCard extends LitElement {
         }
     `;
 
-    async setConfig(config) {
-        console.log("setConfig called with config:", config);
-        this.config = config; 
+ async setConfig(config) {
+        this.config = config;
         this._currentSlideIndex = 0;
 
         this.max_items_to_show = typeof config.max_items_to_show === 'number' && config.max_items_to_show >= 0
             ? config.max_items_to_show : 30;
         this.max_days_to_show = typeof config.max_days_to_show === 'number' && config.max_days_to_show >= 0
-            ? config.max_days_to_show : 30;
+            ? config.max_days_to_show : 0;
 
         const defaultTitleStyle = {
             show_title: true,
-            font_color: null, 
-            font_size: null,  
+            font_color: null,
+            font_size: null,
         };
         this.title_style = { ...defaultTitleStyle, ...(config.title_style || {}) };
         if (this.title_style.show_title === undefined) {
-             this.title_style.show_title = true;
+            this.title_style.show_title = true;
         }
 
         const defaultTimestampStyle = {
@@ -226,7 +250,7 @@ class PhotoCarouselCard extends LitElement {
         };
         this.timestamp_style = { ...defaultTimestampStyle, ...(config.timestamp_style || {}) };
         if (this.timestamp_style.show_timestamp === undefined) {
-             this.timestamp_style.show_timestamp = true;
+            this.timestamp_style.show_timestamp = true;
         }
 
         const defaultDescriptionStyle = {
@@ -236,13 +260,14 @@ class PhotoCarouselCard extends LitElement {
         };
         this.description_style = { ...defaultDescriptionStyle, ...(config.description_style || {}) };
         if (this.description_style.show_description === undefined) {
-             this.description_style.show_description = true;
+            this.description_style.show_description = true;
         }
 
         this._stopReloadInterval();
 
-        let tempProcessedPhotos = [];
+        let tempRawPhotos = []; // This will hold photos after initial loading, before timestamp processing
 
+        // --- Load photos from description_file_path ---
         if (config.description_file_path && String(config.description_file_path).trim() !== '') {
             try {
                 const url = `${config.description_file_path}?_t=${new Date().getTime()}`;
@@ -252,22 +277,21 @@ class PhotoCarouselCard extends LitElement {
                 }
 
                 const contentType = response.headers.get('content-type');
-                const isJson = (contentType && contentType.includes('application/json')) || 
+                const isJson = (contentType && contentType.includes('application/json')) ||
                                (config.description_file_path.toLowerCase().endsWith('.json'));
 
                 if (isJson) {
                     const jsonData = await response.json();
                     if (Array.isArray(jsonData)) {
-                        tempProcessedPhotos = jsonData.map(item => ({
+                        tempRawPhotos = jsonData.map(item => ({
                             img: item.img,
                             desc: item.desc || '',
-                            time_stamp: item.time_stamp || null 
+                            time_stamp: item.time_stamp || null // Preserve original time_stamp here
                         }));
                     } else {
                         console.warn("JSON file content is not a valid array:", jsonData);
                     }
-                    console.log("Images and descriptions loaded from JSON file:", tempProcessedPhotos);
-                } else {
+                } else { // Handle .txt file parsing
                     if (!config.folder_path) {
                         console.error("Configuration error: 'folder_path' is missing when a non-JSON 'description_file_path' is used.");
                         throw new Error('You need to define a "folder_path" for images when using a non-JSON "description_file_path".');
@@ -279,66 +303,70 @@ class PhotoCarouselCard extends LitElement {
                         if (parts.length >= 1 && parts[0].trim() !== '') {
                             const filename = parts[0].trim();
                             const description = parts.length >= 2 ? parts.slice(1).join('|').trim() : '';
-                            tempProcessedPhotos.push({
+                            // Note: .txt files usually don't have time_stamp in this format, so it remains null
+                            tempRawPhotos.push({
                                 img: `${folderPath}${filename}`,
                                 desc: description,
-                                time_stamp: null 
+                                time_stamp: null
                             });
                         }
                     });
-                    console.log("Images and descriptions loaded from text file:", tempProcessedPhotos);
                 }
 
             } catch (error) {
                 console.error("Error loading description file or processing images from file:", error);
             }
         }
-        
-        if (tempProcessedPhotos.length === 0 && config.photos && Array.isArray(config.photos) && config.photos.length > 0) {
-            console.log("Falling back to 'photos' array from configuration.");
-            tempProcessedPhotos = config.photos.map(photo => ({
+
+        // --- If no photos from file, try inline 'photos' property ---
+        if (tempRawPhotos.length === 0 && config.photos && Array.isArray(config.photos) && config.photos.length > 0) {
+            tempRawPhotos = config.photos.map(photo => ({
                 img: photo.img,
                 desc: photo.desc || '',
-                time_stamp: photo.time_stamp || null 
+                time_stamp: photo.time_stamp || null // Preserve original time_stamp here
             }));
         }
+        
+        // --- Process timestamps for all loaded photos ---
+        // This is where the new timestamp logic is applied to every photo
+        const processedPhotosWithTimestamps = tempRawPhotos.map(processPhotoTimestamp);
 
-        if (tempProcessedPhotos.length === 0) {
+
+        if (processedPhotosWithTimestamps.length === 0) {
             console.error("Configuration error: No photos found from either 'description_file_path' or 'photos' property.");
             throw new Error('No photos configured. Please provide images via "description_file_path" or "photos" property.');
         }
 
-        let filteredPhotos = tempProcessedPhotos;
+        // --- Apply filtering and sorting ---
+        let filteredPhotos = processedPhotosWithTimestamps;
 
         if (this.max_days_to_show > 0) {
             const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - this.max_days_to_show); 
-            cutoffDate.setHours(0, 0, 0, 0); 
+            // This sets cutoffDate to the beginning of the day 'max_days_to_show' days ago
+            cutoffDate.setDate(cutoffDate.getDate() - this.max_days_to_show);
+            cutoffDate.setHours(0, 0, 0, 0);
 
             filteredPhotos = filteredPhotos.filter(photo => {
-                if (!photo.time_stamp) {
-                    return false; 
-                }
-                try {
-                    const photoDate = new Date(photo.time_stamp);
-                    return photoDate >= cutoffDate;
-                } catch (e) {
-                    console.warn(`Invalid time_stamp for photo ${photo.img}: ${photo.time_stamp}. Excluding from max_days_to_show filter.`, e);
-                    return false; 
-                }
+                // photo.timestamp is already a valid Date object or defaulted to 'now'
+                // No need for try-catch here as parsing was done by processPhotoTimestamp
+                return photo.timestamp >= cutoffDate;
             });
             console.log(`Filtered by max_days_to_show (${this.max_days_to_show} days): ${filteredPhotos.length} photos remaining.`);
         }
+        
+        // Sort photos by timestamp (most recent first)
+        // This ensures max_items_to_show gets the newest photos if there are too many
+        filteredPhotos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
 
         if (this.max_items_to_show > 0 && filteredPhotos.length > this.max_items_to_show) {
-            filteredPhotos = filteredPhotos.slice(0, this.max_items_to_show); 
+            filteredPhotos = filteredPhotos.slice(0, this.max_items_to_show);
             console.log(`Filtered by max_items_to_show (${this.max_items_to_show} items): ${filteredPhotos.length} photos remaining.`);
         }
 
         this._processedPhotos = filteredPhotos;
         this._totalSlides = this._processedPhotos.length;
 
-        console.log("setConfig finished with processed photos:", this._processedPhotos);
         this.requestUpdate();
 
         this._startReloadInterval();
@@ -643,7 +671,6 @@ class PhotoCarouselCard extends LitElement {
     }
 
     render() {
-        console.log("render called. Config:", this.config, "Processed Photos:", this._processedPhotos);
         
         const cardTitleText = this.config.title || "Photo Carousel"; 
         const shouldShowTitle = this.title_style.show_title && cardTitleText && String(cardTitleText).trim() !== "";

@@ -2,7 +2,7 @@ const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
-  mode: 'production',
+  mode: 'development', // Change to 'production' for production builds
   entry: './src/photo-carousel-card.js',
   output: {
     filename: 'photo-carousel-card.js',
@@ -26,16 +26,18 @@ module.exports = {
     extensions: ['.js', '.json'],
     modules: ['node_modules'],
   },
-  optimization: {
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          output: {
-            comments: false, // Remove all comments, including license comments
-          },
-        },
-        extractComments: false, // Prevent extracting license comments into a separate file
-      }),
-    ],
-  },
+  // optimization: {
+  //   minimizer: [
+  //     new TerserPlugin({
+  //       terserOptions: {
+  //         output: {
+  //           comments: false, // Remove all comments, including license comments
+  //         },
+  //       },
+  //       extractComments: false, // Prevent extracting license comments into a separate file
+  //     }),
+  //   ],
+  // },
+    devtool: 'eval-source-map',
+
 };

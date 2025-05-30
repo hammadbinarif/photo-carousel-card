@@ -67,12 +67,11 @@ The Photo Carousel Card can be configured using the visual editor in Lovelace, o
 | `type`                  | `string` | Yes      | `custom:photo-carousel-card` | The card type.                                                              |
 | `title`                 | `string` | No       | `Photo Carousel` | The main title of the card.                                                 |
 | `description_file_path` | `string` | No       |                  | Path to a `.txt` or `.json` file with photo details (e.g., `/local/events.json`). |
-| `folder_path`           | `string` | No       |                  | Base path for images if `description_file_path` is a `.txt` file (e.g., `/local/my_photos/`). |
 | `photos`                | `list`   | No       | `[]`             | A list of photo objects if defining them inline. (See example below).       |
 | `autoplay`              | `number` | No       | `5000`           | Delay in milliseconds between slides (0 or `false` to disable).             |
 | `reload_interval_minutes` | `number` | No     | `0`              | How often to reload the description file in minutes (0 to disable).         |
 | `max_items_to_show`     | `number` | No       | `30`             | Maximum number of photos to display (0 for no limit).                       |
-| `max_days_to_show`      | `number` | No       | `30`             | Only show photos from the last X days based on timestamp (0 for no limit).  |
+| `max_days_to_show`      | `number` | No       | `0`              | Only show photos from the last X days based on timestamp (0 for no limit).  |
 
 ### Styling Options:
 Each style option (`title_style`, `timestamp_style`, `description_style`) is an `object` with the following sub-properties:
@@ -87,7 +86,7 @@ Each style option (`title_style`, `timestamp_style`, `description_style`) is an 
 
 You can provide photo data in two ways:
 
-1.  **External JSON File (Recommended for long or dynamic data):**
+1.  **External JSON File (Recommended for large or dynamic data):**
     `description_file_path: /local/photos/events.json`
     The JSON file should be an array of objects:
     ```json
@@ -98,7 +97,7 @@ You can provide photo data in two ways:
             "time_stamp": "2024-05-28T10:30:00Z"
         },
         {
-            "img": "[https://example.com/image2.png](https://example.com/image2.png)",
+            "img": "https://example.com/image2.png",
             "desc": "Another photo.",
             "time_stamp": "2024-05-27T15:00:00Z"
         }
@@ -118,17 +117,21 @@ You can provide photo data in two ways:
 
 ## 💡 Examples
 
-### Basic Configuration with JSON file:
+### Basic Configuration with inline photo config:
 
    ```yaml
     type: custom:photo-carousel-card
-    title: My Latest Events
-    description_file_path: /local/doorbell_events.json
-    autoplay: 8000
-    reload_interval_minutes: 5
-    max_items_to_show: 10
-    max_days_to_show: 7
+    title: Trip to Europe
+    photos:
+    - img: >-
+        https://images.freeimages.com/images/large-previews/52b/pyramid-at-the-louvre-1226736.jpg
+        desc: Louvre Pyramid in Paris
+    - img: >-
+        https://www.sprayedout.com/wp-content/uploads/2024/12/montjuic-national-palace-barcelona-web.jpg
+        desc: Montjuic National Palace
    ```
+
+<img src="screenshots/basicconfig.png" width="600">
 
 ### Custom styling options
 
@@ -153,6 +156,8 @@ You can provide photo data in two ways:
         font_color: var(--text-color)
         font_size: 24px
    ```
+
+<img src="screenshots/customstyles.png" width="600">
 
 ---
 
