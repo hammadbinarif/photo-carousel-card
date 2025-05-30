@@ -8,6 +8,5 @@
   "type": "lovelace",
   "domains": ["lovelace"],
   "country": "ALL",
-  "authors": ["hammadbinarif"],
   "zip_release": false
 }
