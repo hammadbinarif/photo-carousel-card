@@ -31,11 +31,15 @@ A highly customizable Lovelace card to display photo snapshots in a dynamic caro
 ## 📦 Installation
 
 ### 🛠️ HACS Installation (Recommended)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=photo-carousel-card&category=plugin&owner=hammadbinarif)
+
 1. Go to HACS > Frontend > "+ Explore & Download Repositories"
 2. Paste this repository URL: `https://github.com/hammadbinarif/photo-carousel-card`
 3. Choose **Lovelace** as category.
 4. Install and refresh your browser.
 5. Add it as a resource if not auto-added:
+
 
 ```yaml
 resources:
