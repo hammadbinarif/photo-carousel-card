@@ -135,4 +135,4 @@ out
 .pnp.*
 
 # local build files
-build-local.sh
+build-local.cmd
