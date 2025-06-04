@@ -26,6 +26,9 @@ A highly customizable Lovelace card to display photo snapshots in a dynamic caro
 - 🖱️ **Intuitive Controls**
   - Arrows, dots, touch, and mouse dragging.
 
+- 🔔 **Doorbell Image Analysis Integration**
+  - Perfectly suited for displaying doorbell camera snapshots and AI-generated descriptions, especially when paired with the [Doorbell image analysis Blueprints repository](https://github.com/hammadbinarif/ha-blueprints).
+
 ---
 
 ## 📦 Installation
